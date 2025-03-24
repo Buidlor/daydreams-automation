@@ -1,0 +1,29 @@
+{
+  "name": "computer-usage",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.0",
+    "@ai-sdk/groq": "^1.2.0",
+    "@ai-sdk/openai": "^1.2.1",
+    "@daydreamsai/core": "^0.2.18-alpha.0",
+    "@gradio/client": "^1.13.1",
+    "@jitsi/robotjs": "^0.6.13",
+    "@tavily/core": "^0.3.1",
+    "@types/screenshot-desktop": "^1.12.3",
+    "discord.js": "^14.18.0",
+    "hyperliquid": "^1.6.2",
+    "robotjs": "^0.6.0",
+    "screenshot-desktop": "^1.15.1",
+    "sharp": "^0.33.5",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2"
+  }
+}
