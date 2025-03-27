@@ -21,7 +21,7 @@ const screenDimensions = {
 function storeScreenshotInMemory(
   ctx: any,
   base64Image?: string | null,
-  mediaType?: string | null
+  mediaType?: string | null,
 ) {
   if (base64Image && mediaType) {
     const dataUrl = `data:${mediaType};base64,${base64Image}`;
@@ -48,7 +48,7 @@ function storeScreenshotInMemory(
     ctx.agentMemory.lastScreenshotTimestamp = Date.now();
     ctx.agentMemory.observations = ctx.agentMemory.observations || [];
     ctx.agentMemory.observations.push(
-      `Screenshot taken at ${new Date().toLocaleTimeString()}`
+      `Screenshot taken at ${new Date().toLocaleTimeString()}`,
     );
   }
 }
@@ -79,32 +79,32 @@ export const takeScreenshotAction = action({
   async handler(call, ctx) {
     try {
       const result = await computerTool.execute({ action: "screenshot" });
-      console.log("Screenshot result:", result);
+
       // Store the screenshot in working memory
       storeScreenshotInMemory(ctx, result.base64Image, result.mediaType);
 
       let parserResult: any;
-      
+
       try {
         // Convert base64 to Buffer for the image_input
-        const imageBuffer = Buffer.from(result.base64Image || '', 'base64');
-        
+        const imageBuffer = Buffer.from(result.base64Image || "", "base64");
+
         const client = await Client.connect("microsoft/OmniParser");
-        parserResult = await client.predict("/process", { 
+        parserResult = await client.predict("/process", {
           image_input: imageBuffer,
           box_threshold: 0.01,
-          iou_threshold: 0.01, 
+          iou_threshold: 0.01,
         });
       } catch (error) {
         console.error("Error parsing screenshot:", error);
       }
 
-
       return {
         success: true,
         // Don't include the base64Image in the action result to avoid storing it in memory
         mediaType: result.mediaType,
-        message: "Screenshot captured successfully. The parsed result is an interpretation of the screenshot with the detected elements and their coordinates. [x, y, width, height]",
+        message:
+          "Screenshot captured successfully. The parsed result is an interpretation of the screenshot with the detected elements and their coordinates. [x, y, width, height]",
         screenDimensions,
         parserResult,
       };
@@ -215,10 +215,10 @@ export const clickMouseAction = action({
       const action = call.data.doubleClick
         ? "double_click"
         : call.data.button === "left"
-          ? "left_click"
-          : call.data.button === "right"
-            ? "right_click"
-            : "middle_click";
+        ? "left_click"
+        : call.data.button === "right"
+        ? "right_click"
+        : "middle_click";
 
       const result = await computerTool.execute({ action });
 
@@ -227,7 +227,9 @@ export const clickMouseAction = action({
 
       return {
         success: true,
-        message: `Performed ${call.data.doubleClick ? "double-" : ""}${call.data.button} click`,
+        message: `Performed ${call.data.doubleClick ? "double-" : ""}${
+          call.data.button
+        } click`,
         screenDimensions,
       };
     } catch (error) {
@@ -334,7 +336,7 @@ export const pressKeyAction = action({
       .array(z.string())
       .optional()
       .describe(
-        "Modifier keys to hold while pressing the key (e.g., ['shift', 'control'])"
+        "Modifier keys to hold while pressing the key (e.g., ['shift', 'control'])",
       ),
   }),
   async handler(call, ctx) {
@@ -538,7 +540,7 @@ export const getCursorPositionAction = action({
           ctx.agentMemory.mousePosition = { x, y };
           ctx.agentMemory.observations = ctx.agentMemory.observations || [];
           ctx.agentMemory.observations.push(
-            `Cursor position: (${x}, ${y}) at ${new Date().toLocaleTimeString()}`
+            `Cursor position: (${x}, ${y}) at ${new Date().toLocaleTimeString()}`,
           );
         }
 
@@ -611,7 +613,9 @@ export const focusWindowAction = action({
         ctx.agentMemory.activeWindow = call.data.windowTitle;
         ctx.agentMemory.observations = ctx.agentMemory.observations || [];
         ctx.agentMemory.observations.push(
-          `Focused window: "${call.data.windowTitle}" at ${new Date().toLocaleTimeString()}`
+          `Focused window: "${
+            call.data.windowTitle
+          }" at ${new Date().toLocaleTimeString()}`,
         );
       }
 
@@ -750,15 +754,19 @@ export const moveAndClickAction = action({
       const clickAction = call.data.doubleClick
         ? "double_click"
         : call.data.button === "left"
-          ? "left_click"
-          : call.data.button === "right"
-            ? "right_click"
-            : "middle_click";
+        ? "left_click"
+        : call.data.button === "right"
+        ? "right_click"
+        : "middle_click";
 
       const clickResult = await computerTool.execute({ action: clickAction });
 
       // Store the screenshot in working memory
-      storeScreenshotInMemory(ctx, clickResult.base64Image, clickResult.mediaType);
+      storeScreenshotInMemory(
+        ctx,
+        clickResult.base64Image,
+        clickResult.mediaType,
+      );
 
       return {
         success: true,

@@ -26,7 +26,7 @@ export class CLIResult implements ToolResult {
     public output?: string | null,
     public error?: string | null,
     public base64Image?: string | null,
-    public system?: string | null
+    public system?: string | null,
   ) {}
 }
 
@@ -38,7 +38,7 @@ export class ToolFailure implements ToolResult {
     public error: string,
     public output?: string | null,
     public base64Image?: string | null,
-    public system?: string | null
+    public system?: string | null,
   ) {}
 }
 
@@ -71,7 +71,7 @@ export abstract class BaseAnthropicTool {
    */
   protected combineResults(
     result1: ToolResult,
-    result2: ToolResult
+    result2: ToolResult,
   ): ToolResult {
     return {
       output: [result1.output, result2.output].filter(Boolean).join(""),
@@ -244,24 +244,24 @@ export class ComputerTool extends BaseAnthropicTool {
       const { width, height, displayNum } = this.getScreenDimensions();
       this.screenDimensions = { width, height };
       this.displayNum = displayNum;
-      
+
       // Re-enable scaling now that we've added the user's screen resolution
       this.scalingEnabled = true;
-      
+
       console.log(
         `Screen dimensions: ${width}x${height}${
           displayNum !== undefined ? `, Display: ${displayNum}` : ""
-        }`
+        }`,
       );
-      
+
       // Check for UI elements that might affect coordinate system
       this.checkForUIElements();
-      
+
       // Initialize screenshot directory
       this.screenshotsBaseDir = path.join(os.tmpdir(), "anthropic-screenshots");
       this.screenshotMetadataFile = path.join(
         this.screenshotsBaseDir,
-        "metadata.json"
+        "metadata.json",
       );
       this.initializeScreenshotDirectory();
     } catch (error) {
@@ -284,7 +284,7 @@ export class ComputerTool extends BaseAnthropicTool {
       } catch {
         await fs.writeFile(
           this.screenshotMetadataFile,
-          JSON.stringify([], null, 2)
+          JSON.stringify([], null, 2),
         );
       }
     } catch (error) {
@@ -305,7 +305,7 @@ export class ComputerTool extends BaseAnthropicTool {
       existingMetadata.push(metadata);
       await fs.writeFile(
         this.screenshotMetadataFile,
-        JSON.stringify(existingMetadata, null, 2)
+        JSON.stringify(existingMetadata, null, 2),
       );
     } catch (error) {
       console.error("Error saving screenshot metadata:", error);
@@ -313,12 +313,11 @@ export class ComputerTool extends BaseAnthropicTool {
   }
 
   private getScreenshotPath(): { directory: string; filename: string } {
-    console.log("Getting screenshot path");
     const now = new Date();
     const datePath = path.join(
       now.getFullYear().toString(),
       (now.getMonth() + 1).toString().padStart(2, "0"),
-      now.getDate().toString().padStart(2, "0")
+      now.getDate().toString().padStart(2, "0"),
     );
 
     const timestamp = now.toISOString().replace(/[:.]/g, "-");
@@ -331,7 +330,6 @@ export class ComputerTool extends BaseAnthropicTool {
   }
 
   private async takeScreenshot(): Promise<ToolResult> {
-    console.log("Taking screenshot");
     const { directory, filename } = this.getScreenshotPath();
     console.log("Directory:", directory);
     console.log("Filename:", filename);
@@ -405,7 +403,7 @@ export class ComputerTool extends BaseAnthropicTool {
                     quality: settings.quality,
                     dimensions: `${finalDimensions.width}x${finalDimensions.height}`,
                     size: `${(imageBuffer.length / 1024 / 1024).toFixed(2)}MB`,
-                  }
+                  },
                 );
                 break;
               }
@@ -433,7 +431,7 @@ export class ComputerTool extends BaseAnthropicTool {
         size: imageBuffer.length,
         path: path.relative(
           this.screenshotsBaseDir,
-          compressedPath + (usedFormat === "png" ? ".png" : ".jpg")
+          compressedPath + (usedFormat === "png" ? ".png" : ".jpg"),
         ),
       };
       await this.saveScreenshotMetadata(metadata);
@@ -474,7 +472,7 @@ export class ComputerTool extends BaseAnthropicTool {
         const [x, y] = this.scaleCoordinates(
           "api",
           coordinate[0],
-          coordinate[1]
+          coordinate[1],
         );
         await this.validateCoordinates(x, y);
         robot.moveMouse(x, y);
@@ -484,7 +482,7 @@ export class ComputerTool extends BaseAnthropicTool {
       case "mouse_toggle":
         if (!toggleState || !button) {
           throw new ToolError(
-            "toggleState and button are required for mouse_toggle"
+            "toggleState and button are required for mouse_toggle",
           );
         }
         robot.mouseToggle(toggleState, button);
@@ -498,7 +496,7 @@ export class ComputerTool extends BaseAnthropicTool {
         const [dragX, dragY] = this.scaleCoordinates(
           "api",
           coordinate[0],
-          coordinate[1]
+          coordinate[1],
         );
         await this.validateCoordinates(dragX, dragY);
         robot.mouseToggle("down", "left");
@@ -560,23 +558,23 @@ export class ComputerTool extends BaseAnthropicTool {
         if (process.platform === "win32") {
           await this.executeCommand(
             `powershell -Command "(New-Object -ComObject WScript.Shell).AppActivate('${windowTitle}')"`,
-            "window focus"
+            "window focus",
           );
         } else if (process.platform === "darwin") {
           await this.executeCommand(
             `osascript -e 'tell application "${windowTitle}" to activate'`,
-            "window focus"
+            "window focus",
           );
         } else {
           // Linux and other platforms
           try {
             await this.executeCommand(
               `xdotool search --name "${windowTitle}" windowactivate`,
-              "window focus"
+              "window focus",
             );
           } catch (error) {
             throw new ToolError(
-              `Failed to focus window: xdotool may not be installed. Please install it with your package manager (e.g., 'sudo apt-get install xdotool' on Ubuntu).`
+              `Failed to focus window: xdotool may not be installed. Please install it with your package manager (e.g., 'sudo apt-get install xdotool' on Ubuntu).`,
             );
           }
         }
@@ -586,34 +584,36 @@ export class ComputerTool extends BaseAnthropicTool {
       case "move_window":
         if (!windowTitle || !coordinate) {
           throw new ToolError(
-            "windowTitle and coordinate are required for move_window"
+            "windowTitle and coordinate are required for move_window",
           );
         }
         const [moveX, moveY] = this.scaleCoordinates(
           "api",
           coordinate[0],
-          coordinate[1]
+          coordinate[1],
         );
         if (process.platform === "win32") {
           await this.executeCommand(
             `powershell -Command "$wshell = New-Object -ComObject WScript.Shell; $wshell.AppActivate('${windowTitle}'); [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${moveX}, ${moveY})"`,
-            "window move"
+            "window move",
           );
         } else if (process.platform === "darwin") {
           await this.executeCommand(
-            `osascript -e 'tell application "${windowTitle}" to set bounds of window 1 to {${moveX}, ${moveY}, ${moveX + 800}, ${moveY + 600}}'`,
-            "window move"
+            `osascript -e 'tell application "${windowTitle}" to set bounds of window 1 to {${moveX}, ${moveY}, ${
+              moveX + 800
+            }, ${moveY + 600}}'`,
+            "window move",
           );
         } else {
           // Linux and other platforms
           try {
             await this.executeCommand(
               `xdotool search --name "${windowTitle}" windowmove ${moveX} ${moveY}`,
-              "window move"
+              "window move",
             );
           } catch (error) {
             throw new ToolError(
-              `Failed to move window: xdotool may not be installed. Please install it with your package manager (e.g., 'sudo apt-get install xdotool' on Ubuntu).`
+              `Failed to move window: xdotool may not be installed. Please install it with your package manager (e.g., 'sudo apt-get install xdotool' on Ubuntu).`,
             );
           }
         }
@@ -623,38 +623,40 @@ export class ComputerTool extends BaseAnthropicTool {
       case "resize_window":
         if (!windowTitle || !size) {
           throw new ToolError(
-            "windowTitle and size are required for resize_window"
+            "windowTitle and size are required for resize_window",
           );
         }
         if (process.platform === "win32") {
           await this.executeCommand(
             `powershell -Command "$wshell = New-Object -ComObject WScript.Shell; $wshell.AppActivate('${windowTitle}'); $window = Get-Process | Where-Object {$_.MainWindowTitle -eq '${windowTitle}'} | Select-Object -First 1; $window.MainWindowHandle.Size = New-Object System.Drawing.Size(${size.width}, ${size.height})"`,
-            "window resize"
+            "window resize",
           );
         } else if (process.platform === "darwin") {
           // Get current position to maintain it while resizing
           const currentPos = await this.executeCommand(
             `osascript -e 'tell application "${windowTitle}" to get the position of window 1'`,
-            "get window position"
+            "get window position",
           );
           const posMatch = currentPos?.match(/(\d+), (\d+)/);
           const posX = posMatch ? parseInt(posMatch[1]) : 0;
           const posY = posMatch ? parseInt(posMatch[2]) : 0;
 
           await this.executeCommand(
-            `osascript -e 'tell application "${windowTitle}" to set bounds of window 1 to {${posX}, ${posY}, ${posX + size.width}, ${posY + size.height}}'`,
-            "window resize"
+            `osascript -e 'tell application "${windowTitle}" to set bounds of window 1 to {${posX}, ${posY}, ${
+              posX + size.width
+            }, ${posY + size.height}}'`,
+            "window resize",
           );
         } else {
           // Linux and other platforms
           try {
             await this.executeCommand(
               `xdotool search --name "${windowTitle}" windowsize ${size.width} ${size.height}`,
-              "window resize"
+              "window resize",
             );
           } catch (error) {
             throw new ToolError(
-              `Failed to resize window: xdotool may not be installed. Please install it with your package manager (e.g., 'sudo apt-get install xdotool' on Ubuntu).`
+              `Failed to resize window: xdotool may not be installed. Please install it with your package manager (e.g., 'sudo apt-get install xdotool' on Ubuntu).`,
             );
           }
         }
@@ -701,7 +703,7 @@ export class ComputerTool extends BaseAnthropicTool {
         const [scaledX, scaledY] = this.scaleCoordinates(
           "computer",
           mouse.x,
-          mouse.y
+          mouse.y,
         );
         result = { output: `X=${scaledX},Y=${scaledY}` };
         break;
@@ -716,7 +718,7 @@ export class ComputerTool extends BaseAnthropicTool {
   // Helper method for executing system commands
   private async executeCommand(
     command: string,
-    operation: string
+    operation: string,
   ): Promise<string | undefined> {
     try {
       const { exec } = require("child_process");
@@ -724,7 +726,7 @@ export class ComputerTool extends BaseAnthropicTool {
         exec(command, (error: Error | null, stdout: string, stderr: string) => {
           if (error) {
             reject(
-              new ToolError(`Failed to execute ${operation}: ${error.message}`)
+              new ToolError(`Failed to execute ${operation}: ${error.message}`),
             );
           }
           resolve(stdout ? stdout.trim() : undefined);
@@ -775,7 +777,7 @@ export class ComputerTool extends BaseAnthropicTool {
       }
     } else {
       console.log(
-        `Scaling disabled, reporting actual dimensions: ${width}x${height}`
+        `Scaling disabled, reporting actual dimensions: ${width}x${height}`,
       );
     }
 
@@ -849,7 +851,7 @@ export class ComputerTool extends BaseAnthropicTool {
   private scaleCoordinates(
     source: "api" | "computer",
     x: number,
-    y: number
+    y: number,
   ): [number, number] {
     if (!this.scalingEnabled) {
       console.log(`Scaling disabled, using raw coordinates: (${x}, ${y})`);
@@ -857,13 +859,17 @@ export class ComputerTool extends BaseAnthropicTool {
     }
 
     console.log(`Scaling coordinates: source=${source}, input=(${x}, ${y})`);
-    console.log(`Current screen dimensions: ${this.screenDimensions.width}x${this.screenDimensions.height}`);
+    console.log(
+      `Current screen dimensions: ${this.screenDimensions.width}x${this.screenDimensions.height}`,
+    );
 
     // Apply macOS-specific adjustments if needed
-    if (process.platform === 'darwin') {
+    if (process.platform === "darwin") {
       const [adjustedX, adjustedY] = this.applyMacOSAdjustments(x, y, source);
       if (adjustedX !== x || adjustedY !== y) {
-        console.log(`Applied macOS adjustments: (${x}, ${y}) -> (${adjustedX}, ${adjustedY})`);
+        console.log(
+          `Applied macOS adjustments: (${x}, ${y}) -> (${adjustedX}, ${adjustedY})`,
+        );
         x = adjustedX;
         y = adjustedY;
       }
@@ -871,7 +877,7 @@ export class ComputerTool extends BaseAnthropicTool {
 
     const ratio = this.screenDimensions.width / this.screenDimensions.height;
     console.log(`Screen aspect ratio: ${ratio.toFixed(3)}`);
-    
+
     let targetDimension = null;
 
     // First try to find an exact match for the current screen resolution
@@ -890,11 +896,17 @@ export class ComputerTool extends BaseAnthropicTool {
     for (const [name, dimension] of Object.entries(MAX_SCALING_TARGETS)) {
       const dimensionRatio = dimension.width / dimension.height;
       const ratioDifference = Math.abs(dimensionRatio - ratio);
-      console.log(`Checking ${name}: ratio=${dimensionRatio.toFixed(3)}, difference=${ratioDifference.toFixed(3)}`);
-      
+      console.log(
+        `Checking ${name}: ratio=${dimensionRatio.toFixed(
+          3,
+        )}, difference=${ratioDifference.toFixed(3)}`,
+      );
+
       if (ratioDifference < 0.1) {
         targetDimension = dimension;
-        console.log(`Using similar aspect ratio resolution: ${name} (${dimension.width}x${dimension.height})`);
+        console.log(
+          `Using similar aspect ratio resolution: ${name} (${dimension.width}x${dimension.height})`,
+        );
         break;
       }
     }
@@ -906,46 +918,65 @@ export class ComputerTool extends BaseAnthropicTool {
     }
 
     const xScalingFactor = targetDimension.width / this.screenDimensions.width;
-    const yScalingFactor = targetDimension.height / this.screenDimensions.height;
+    const yScalingFactor =
+      targetDimension.height / this.screenDimensions.height;
 
-    console.log(`Scaling factors: x=${xScalingFactor.toFixed(3)}, y=${yScalingFactor.toFixed(3)}`);
-    console.log(`Target resolution: ${targetDimension.width}x${targetDimension.height}`);
+    console.log(
+      `Scaling factors: x=${xScalingFactor.toFixed(
+        3,
+      )}, y=${yScalingFactor.toFixed(3)}`,
+    );
+    console.log(
+      `Target resolution: ${targetDimension.width}x${targetDimension.height}`,
+    );
 
     if (source === "api") {
       if (x > targetDimension.width || y > targetDimension.height) {
         throw new ToolError(
           `Coordinates ${x}, ${y} are outside scaled screen bounds ` +
-            `(${targetDimension.width}x${targetDimension.height})`
+            `(${targetDimension.width}x${targetDimension.height})`,
         );
       }
-      
+
       // The issue might be in how we're scaling from API coordinates to screen coordinates
       // Let's try a different approach for the Y-coordinate
       const scaledX = Math.round(x / xScalingFactor);
-      
+
       // For Y-coordinate, let's try a proportional approach
       // This calculates what percentage of the target height the Y value is,
       // then applies that percentage to the actual screen height
       const yPercentage = y / targetDimension.height;
       const scaledY = Math.round(yPercentage * this.screenDimensions.height);
-      
-      console.log(`Original scaling: y=${y} / ${yScalingFactor} = ${Math.round(y / yScalingFactor)}`);
-      console.log(`Proportional scaling: y=${y} / ${targetDimension.height} * ${this.screenDimensions.height} = ${scaledY}`);
+
+      console.log(
+        `Original scaling: y=${y} / ${yScalingFactor} = ${Math.round(
+          y / yScalingFactor,
+        )}`,
+      );
+      console.log(
+        `Proportional scaling: y=${y} / ${targetDimension.height} * ${this.screenDimensions.height} = ${scaledY}`,
+      );
       console.log(`Final scaled coordinates: output=(${scaledX}, ${scaledY})`);
-      
+
       return [scaledX, scaledY];
     }
 
     const scaledX = Math.round(x * xScalingFactor);
-    
+
     // Same proportional approach for the reverse direction
     const yPercentage = y / this.screenDimensions.height;
     const scaledY = Math.round(yPercentage * targetDimension.height);
-    
-    console.log(`Original scaling: y=${y} * ${yScalingFactor} = ${Math.round(y * yScalingFactor)}`);
-    console.log(`Proportional scaling: y=${y} / ${this.screenDimensions.height} * ${targetDimension.height} = ${scaledY}`);
+
+    console.log(
+      `Original scaling: y=${y} * ${yScalingFactor} = ${Math.round(
+        y * yScalingFactor,
+      )}`,
+    );
+    console.log(
+      `Proportional scaling: y=${y} / ${this.screenDimensions.height} * ${targetDimension.height} = ${scaledY}`,
+    );
     console.log(`Final scaled coordinates: output=(${scaledX}, ${scaledY})`);
-    
+
     return [scaledX, scaledY];
   }
 
@@ -953,12 +984,12 @@ export class ComputerTool extends BaseAnthropicTool {
    * Apply macOS-specific coordinate adjustments
    */
   private applyMacOSAdjustments(
-    x: number, 
-    y: number, 
-    source: "api" | "computer"
+    x: number,
+    y: number,
+    source: "api" | "computer",
   ): [number, number] {
     // No adjustments needed if we're not on macOS
-    if (process.platform !== 'darwin') {
+    if (process.platform !== "darwin") {
       return [x, y];
     }
 
@@ -967,7 +998,7 @@ export class ComputerTool extends BaseAnthropicTool {
 
     // Adjust for menu bar height (typically 24 pixels on macOS)
     const menuBarHeight = 24;
-    
+
     if (source === "api" && y < menuBarHeight) {
       // If targeting the menu bar area, keep it as is
       console.log(`Coordinate in menu bar area, no adjustment needed`);
@@ -983,7 +1014,9 @@ export class ComputerTool extends BaseAnthropicTool {
     // For now, we'll just log a warning if we're near the bottom of the screen
     const bottomMargin = 50; // Approximate dock height
     if (source === "api" && y > this.screenDimensions.height - bottomMargin) {
-      console.log(`Warning: Targeting area near the bottom of the screen (possible dock area)`);
+      console.log(
+        `Warning: Targeting area near the bottom of the screen (possible dock area)`,
+      );
     }
 
     return [adjustedX, adjustedY];
@@ -1006,7 +1039,7 @@ export class ComputerTool extends BaseAnthropicTool {
     ) {
       throw new ToolError(
         `Coordinates (${x}, ${y}) are outside screen bounds ` +
-          `(${this.screenDimensions.width}x${this.screenDimensions.height})`
+          `(${this.screenDimensions.width}x${this.screenDimensions.height})`,
       );
     }
   }
@@ -1015,33 +1048,45 @@ export class ComputerTool extends BaseAnthropicTool {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private getScreenDimensions(): { width: number; height: number; displayNum?: number } {
+  private getScreenDimensions(): {
+    width: number;
+    height: number;
+    displayNum?: number;
+  } {
     const screen = robot.getScreenSize();
-    const displayNum = process.env.DISPLAY_NUM ? parseInt(process.env.DISPLAY_NUM, 10) : undefined;
-    
+    const displayNum = process.env.DISPLAY_NUM
+      ? parseInt(process.env.DISPLAY_NUM, 10)
+      : undefined;
+
     console.log(`Robot detected screen size: ${screen.width}x${screen.height}`);
-    
+
     // Try to detect if we're on macOS with a notch or other display anomalies
-    if (process.platform === 'darwin') {
+    if (process.platform === "darwin") {
       try {
         // On macOS, we can use the 'system_profiler' command to get more accurate display info
-        const { execSync } = require('child_process');
-        const displayInfo = execSync('system_profiler SPDisplaysDataType').toString();
-        console.log('Display information from system_profiler:');
+        const { execSync } = require("child_process");
+        const displayInfo = execSync(
+          "system_profiler SPDisplaysDataType",
+        ).toString();
+        console.log("Display information from system_profiler:");
         console.log(displayInfo);
-        
+
         // Check if this is a MacBook with a notch
-        const hasNotch = displayInfo.includes('MacBook') && 
-                         (displayInfo.includes('Retina') || displayInfo.includes('Liquid Retina'));
-        
+        const hasNotch =
+          displayInfo.includes("MacBook") &&
+          (displayInfo.includes("Retina") ||
+            displayInfo.includes("Liquid Retina"));
+
         if (hasNotch) {
-          console.log('Detected MacBook with potential notch - this may affect coordinate scaling');
+          console.log(
+            "Detected MacBook with potential notch - this may affect coordinate scaling",
+          );
         }
       } catch (error) {
-        console.error('Error detecting display information:', error);
+        console.error("Error detecting display information:", error);
       }
     }
-    
+
     return {
       width: screen.width,
       height: screen.height,
@@ -1054,26 +1099,42 @@ export class ComputerTool extends BaseAnthropicTool {
    */
   private checkForUIElements() {
     // Check for macOS dock position and size
-    if (process.platform === 'darwin') {
+    if (process.platform === "darwin") {
       try {
-        const { execSync } = require('child_process');
-        
+        const { execSync } = require("child_process");
+
         // Check dock position
-        const dockPosition = execSync('defaults read com.apple.dock orientation 2>/dev/null || echo "bottom"').toString().trim();
+        const dockPosition = execSync(
+          'defaults read com.apple.dock orientation 2>/dev/null || echo "bottom"',
+        )
+          .toString()
+          .trim();
         console.log(`macOS Dock position: ${dockPosition}`);
-        
+
         // Check if dock is auto-hidden
-        const dockAutoHide = execSync('defaults read com.apple.dock autohide 2>/dev/null || echo "0"').toString().trim();
-        console.log(`macOS Dock auto-hide: ${dockAutoHide === "1" ? "enabled" : "disabled"}`);
-        
+        const dockAutoHide = execSync(
+          'defaults read com.apple.dock autohide 2>/dev/null || echo "0"',
+        )
+          .toString()
+          .trim();
+        console.log(
+          `macOS Dock auto-hide: ${
+            dockAutoHide === "1" ? "enabled" : "disabled"
+          }`,
+        );
+
         // Check for menu bar height (typically 22-24 pixels on macOS)
-        console.log(`Assuming macOS menu bar is present (typically 22-24 pixels high)`);
-        
+        console.log(
+          `Assuming macOS menu bar is present (typically 22-24 pixels high)`,
+        );
+
         if (dockPosition === "bottom" && dockAutoHide === "0") {
-          console.log(`Warning: Dock at bottom of screen may affect clicking on elements near the bottom`);
+          console.log(
+            `Warning: Dock at bottom of screen may affect clicking on elements near the bottom`,
+          );
         }
       } catch (error) {
-        console.error('Error checking for UI elements:', error);
+        console.error("Error checking for UI elements:", error);
       }
     }
   }
