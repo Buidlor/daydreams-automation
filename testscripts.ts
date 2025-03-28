@@ -3,14 +3,17 @@ import { ComputerTool } from "./base";
 // Start with just getting current mouse position to help calibrate
 async function main() {
   const computerTool = new ComputerTool();
-  try {  
-    const screenshot = await computerTool.execute({
-      action: "screenshot"
+  try {
+    const position = await computerTool.execute({
+      action: "cursor_position",
     });
-    console.log("Screenshot:", screenshot);
 
+    const moveTo = await computerTool.execute({
+      action: "mouse_move",
+      coordinate: [500, 500],
+    });
   } catch (error) {
-    console.error('Failed to getparams: ', error); 
+    console.error("Failed to get params: ", error);
   }
 }
 

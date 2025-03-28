@@ -1,6 +1,6 @@
 import { createDreams, validateEnv, context, render } from "@daydreamsai/core";
 import { cli } from "@daydreamsai/core/extensions";
-import { groq } from "@ai-sdk/groq";
+import { telegram } from "@daydreamsai/telegram";
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -11,7 +11,20 @@ import {
   getCursorPositionAction,
 } from "./computer-actions";
 
+validateEnv(
+  z.object({
+    TELEGRAM_TOKEN: z.string().min(1, "TELEGRAM_TOKEN is required"),
+    ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
+  }),
+);
+
 const browserContext = context({
+  type: "browser",
+  schema: z.object({
+    browserName: z.string().default("Google Chrome"),
+    url: z.string().optional(),
+    windowSize: z
+      .object({
   type: "browser",
   schema: z.object({
     browserName: z.string().default("Google Chrome"),
@@ -23,7 +36,13 @@ const browserContext = context({
       })
       .optional(),
   }),
+      })
+      .optional(),
+  }),
 
+  key({ browserName }) {
+    return browserName;
+  },
   key({ browserName }) {
     return browserName;
   },
@@ -37,7 +56,19 @@ const browserContext = context({
       screenshots: [],
     };
   },
+  create(state) {
+    return {
+      browserName: state.args.browserName,
+      url: state.args.url,
+      windowSize: state.args.windowSize || { width: 1280, height: 800 },
+      lastAction: "initialized",
+      screenshots: [],
+    };
+  },
 
+  render({ memory }) {
+    return render(
+      `
   render({ memory }) {
     return render(
       `
@@ -48,7 +79,7 @@ const browserContext = context({
           `,
       {
         browserName: memory.browserName,
-        url: memory.url || "Not set",
+        url: memory.url || "https://piratenation.game/play",
         width: String(memory.windowSize.width),
         height: String(memory.windowSize.height),
         lastAction: memory.lastAction,
@@ -57,46 +88,31 @@ const browserContext = context({
   },
 });
 
-// Start with just foundry tab position
 const UI_POSITIONS = {
+  craftingAnvil: { x: 265, y: 265 },
   foundryTab: { x: 265, y: 265 },
 };
 
-async function main() {
-  let agent;
-  try {
-    agent = await createDreams({
-      model: anthropic("claude-3-5-sonnet-20240620"),
-      extensions: [cli],
-      context: browserContext,
-      actions: [
-        takeScreenshotAction,
-        moveMouseAction,
-        clickMouseAction,
-        getCursorPositionAction,
-      ],
-    });
-    // Add signal handlers for cleanup
-    const cleanup = () => {
-      console.log("Cleaning up...");
-      agent?.stop?.();
-      process.exit(0);
-    };
+async function craftIronAnchors() {
+  console.log("Crafting iron anchors");
+}
 
-    process.on("SIGINT", cleanup);
-    process.on("SIGTERM", cleanup);
-    process.on("uncaughtException", (err) => {
-      console.error("Uncaught Exception:", err);
-      cleanup();
-    });
-    await agent.start({
-      browserName: "Google Chrome",
-      windowSize: { width: 1280, height: 800 },
-    });
-  } catch (error) {
-    console.error("error in amin: ", error);
-    process.exit(1);
-  }
+async function main() {
+  const agent = await createDreams({
+    model: anthropic("claude-3-5-sonnet-20240620"),
+    extensions: [cli, telegram],
+    context: browserContext,
+    actions: [
+      takeScreenshotAction,
+      moveMouseAction,
+      clickMouseAction,
+      getCursorPositionAction,
+    ],
+  }).start({
+    browserName: "Google Chrome",
+    windowSize: { width: 1280, height: 800 },
+  });
 }
 
 main().catch(console.error);
+
